@@ -6,8 +6,8 @@ This project is a command-line calculator built in Python. It supports addition 
 Clone the repository and move into the project folder:
 
 ```bash
-git clone YOUR-REPOSITORY-URL
-cd YOUR-REPOSITORY-NAME
+git clone git@github.com:ms543-create/my-oop-calculator.git
+cd my-oop-calculator
 
 ## Running the Calculator
 
