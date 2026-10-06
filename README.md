@@ -93,3 +93,14 @@ The Command pattern gives different application actions the same `execute()` con
 The `count` feature belongs as an application action instead of a mathematical operation because it does not perform math on operands. It looks at the current calculator session and reports how many successful calculations have been saved.
 
 A static operation performs the actual math, a `Calculation` object stores an operation with its inputs, and a `Command` represents an application action that can be executed.
+
+
+## Part 5 Reflection
+
+Statistics use the same calculation system as the earlier arithmetic operations. The mean and standard deviation functions validate the observations first and then use a pandas Series to calculate the result. Standard deviation supports `ddof=1` for sample deviation and `ddof=0` for population deviation.
+
+CSV input is kept separate from the mathematical operations. The CSV reader turns a DataFrame column into a list of observations, and those observations are then passed through the same factory and numeric validation used for manually entered values. This means the source of the data does not change the mathematical request.
+
+The flow for CSV data is DataFrame → Series → list → numeric tuple → stored operation → result. File reading belongs in `inputs.py`, mathematical rules belong in `statistics.py` and `operations.py`, construction belongs in the factory, and display belongs in the command and CLI layers.
+
+For the independent exercise, I updated the CSV reader so a caller can select another documented column such as `observation`. The statistics and calculation components remain independent of the file structure because they only receive observations after the CSV reader has extracted the selected column.

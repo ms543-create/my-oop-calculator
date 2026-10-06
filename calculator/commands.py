@@ -67,7 +67,12 @@ class HelpCommand(Command):
             "  sqrt 9\n"
             "  power 3 exponent=4\n"
             "  sum 1 2 3\n"
-            "Commands: history, clear, help, exit"
+            "  mean 10 20 30 40 50\n"
+            "  stddev 10 20 30 40 50\n"
+            "  stddev 2 4 6 ddof=0\n"
+            "  csv mean values.csv\n"
+            "  csv stddev values.csv\n"
+            "Commands: history, clear, count, help, exit"
         )
 
 

@@ -114,3 +114,45 @@ def test_module_entrypoint(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "exit")
 
     runpy.run_module("calculator", run_name="__main__")
+
+
+def test_prepare_csv_mean():
+    session = CalculatorSession()
+
+    command = prepare_command("csv mean values.csv", session)
+
+    assert command.execute() == "Result: 30.0000"
+
+
+def test_prepare_csv_stddev():
+    session = CalculatorSession()
+
+    command = prepare_command("csv stddev values.csv", session)
+
+    assert command.execute() == "Result: 15.8114"
+
+
+def test_prepare_csv_stddev_with_ddof():
+    session = CalculatorSession()
+
+    command = prepare_command("csv stddev values.csv ddof=0", session)
+
+    assert command.execute() == "Result: 14.1421"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "csv",
+        "csv mean",
+        "csv add values.csv",
+        "csv mean values.csv badoption",
+        "csv stddev values.csv =0",
+        "csv stddev values.csv ddof=0 ddof=1",
+    ],
+)
+def test_reject_invalid_csv_commands(text):
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command(text, session)

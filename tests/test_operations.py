@@ -49,3 +49,12 @@ def test_sum_accepts_many_values():
 def test_sum_rejects_empty_input():
     with pytest.raises(ValueError):
         Operations.sum()
+
+
+def test_mean_operation():
+    assert Operations.mean(2, 4, 6) == pytest.approx(4.0)
+
+
+def test_stddev_operation():
+    assert Operations.stddev(2, 4, 6) == pytest.approx(2.0)
+    assert Operations.stddev(2, 4, 6, ddof=0) == pytest.approx(1.632993, rel=1e-5)

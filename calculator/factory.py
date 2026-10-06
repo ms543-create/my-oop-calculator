@@ -19,6 +19,8 @@ class CalculationFactory:
         "power": Operations.power,
         "sum": Operations.sum,
         "scale": Operations.scale,
+        "mean": Operations.mean,
+        "stddev": Operations.stddev
     }
 
     operand_counts = {
@@ -36,6 +38,7 @@ class CalculationFactory:
     allowed_options = {
         "power": {"exponent"},
         "scale": {"factor"},
+        "stddev": {"ddof"},
     }
 
     @staticmethod

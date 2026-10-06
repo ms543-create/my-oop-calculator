@@ -2,6 +2,7 @@
 
 from math import pow, sqrt
 
+from calculator.statistics import mean, standard_deviation
 
 class Operations:
     """Group the mathematical operations used by the calculator."""
@@ -47,3 +48,11 @@ class Operations:
     @staticmethod
     def scale(value: float, *, factor: float = 1) -> float:
         return value / factor
+
+    @staticmethod
+    def mean(*values: float) -> float:
+        return mean(values)
+
+    @staticmethod
+    def stddev(*values: float, ddof: float = 1) -> float:
+        return standard_deviation(values, ddof=ddof)
