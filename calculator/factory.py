@@ -1,11 +1,12 @@
-"""A factory centralizes construction; it does not execute math."""
+"""Select a static operation and construct an unexecuted Calculation."""
 
 from calculator.calculation import Calculation
 from calculator.operations import Operations
+from calculator.validation import numeric_values
 
 
 class CalculationFactory:
-    """Create calculations from operation names."""
+    """Create calculations from operation names and flexible inputs."""
 
     operations = {
         "add": Operations.add,
@@ -13,11 +14,33 @@ class CalculationFactory:
         "multiply": Operations.multiply,
         "divide": Operations.divide,
         "absolute_difference": Operations.absolute_difference,
+        "square": Operations.square,
+        "sqrt": Operations.sqrt,
+        "power": Operations.power,
+        "sum": Operations.sum,
+        "scale": Operations.scale,
+    }
+
+    operand_counts = {
+        "add": 2,
+        "subtract": 2,
+        "multiply": 2,
+        "divide": 2,
+        "absolute_difference": 2,
+        "square": 1,
+        "sqrt": 1,
+        "power": 1,
+        "scale": 1,
+    }
+
+    allowed_options = {
+        "power": {"exponent"},
+        "scale": {"factor"},
     }
 
     @staticmethod
-    def create(name, a, b):
-        """Create a calculation without executing it."""
+    def create(name: str, *values, **options) -> Calculation:
+        """Select an operation and construct it without executing it."""
         name = name.strip().lower()
 
         try:
@@ -25,4 +48,18 @@ class CalculationFactory:
         except KeyError:
             raise ValueError(f"Unknown operation: {name}") from None
 
-        return Calculation(a, b, operation)
+        allowed = CalculationFactory.allowed_options.get(name, set())
+        converted_options = {}
+
+        for key, value in options.items():
+            if key not in allowed:
+                raise ValueError(f"Unsupported option for {name}: {key}")
+
+            converted_options[key] = numeric_values([value])[0]
+
+        count = CalculationFactory.operand_counts.get(name)
+
+        if count is not None and len(values) != count:
+            raise ValueError(f"{name} requires exactly {count} value(s).")
+
+        return Calculation(values, operation, **converted_options)

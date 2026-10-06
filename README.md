@@ -71,3 +71,14 @@ With composition, adding an absolute difference operation only required adding a
 The creation step now takes an operation name, normalizes it, selects the correct operation, and returns a configured `Calculation`. The math does not run during this process. It only runs later when `get_result()` is called.
 
 The construction policy now lives in `CalculationFactory`. For example, `absolute_difference` is registered there instead of requiring each caller to know which function should be used.
+
+
+## Part 3 Reflection
+
+The old `a` and `b` interface changed because not every operation needs exactly two values. Storing a collection of values allows the same `Calculation` class to support unary, binary, and many-value operations.
+
+The factory still validates requests because flexible arguments do not mean every combination of inputs is valid. It checks operation names, operand counts, allowed options, and numeric option values before constructing a calculation.
+
+In a function definition, `*values` gathers positional arguments and `**options` gathers named arguments. At a call site, `*values` unpacks positional values and `**options` unpacks named settings.
+
+For the independent exercise, I added `scale`, which takes one value and an optional `factor`. Its construction rules are registered in the factory, while a zero factor fails later when the calculation executes.

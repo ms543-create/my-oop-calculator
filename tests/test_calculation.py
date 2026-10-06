@@ -1,4 +1,6 @@
-"""Tests for calculations that store operation callables."""
+"""Tests for calculations with flexible inputs."""
+
+import runpy
 
 import pytest
 
@@ -6,69 +8,53 @@ from calculator.calculation import Calculation
 from calculator.operations import Operations
 
 
-def test_add_calculation():
-    calculation = Calculation(2, 3, Operations.add)
-    assert calculation.get_result() == 5
-
-
-def test_subtract_calculation():
-    calculation = Calculation(5, 3, Operations.subtract)
-    assert calculation.get_result() == 2
-
-
-def test_multiply_calculation():
-    calculation = Calculation(4, 3, Operations.multiply)
-    assert calculation.get_result() == 12
-
-
-def test_divide_calculation():
-    calculation = Calculation(10, 2, Operations.divide)
-    assert calculation.get_result() == 5
-
-
-def test_operation_is_not_called_during_construction():
+def test_construction_defers_execution_and_snapshots_inputs():
     calls = []
 
-    def spy(a, b):
+    def operation(a, b):
         calls.append((a, b))
         return a + b
 
-    calculation = Calculation(2, 3, spy)
+    values = [2, 3]
+    calculation = Calculation(values, operation)
+    values.clear()
 
     assert calls == []
-
     assert calculation.get_result() == 5
     assert calls == [(2.0, 3.0)]
 
 
-def test_zero_divisor_fails_during_execution():
-    calculation = Calculation(10, 0, Operations.divide)
+def test_zero_division_occurs_during_execution():
+    calculation = Calculation([1, 0], Operations.divide)
 
     with pytest.raises(ZeroDivisionError):
         calculation.get_result()
 
 
-def test_reject_non_numeric_operand():
-    with pytest.raises(ValueError):
-        Calculation("hello", 3, Operations.add)
-
-
-def test_reject_nonfinite_operand():
-    with pytest.raises(ValueError):
-        Calculation(float("inf"), 3, Operations.add)
-
-
 def test_reject_nonfinite_result():
-    def infinite_result(a, b):
-        return float("inf")
+    calculation = Calculation([1e308, 1e308], Operations.multiply)
 
-    calculation = Calculation(2, 3, infinite_result)
-
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="range"):
         calculation.get_result()
 
 
-def test_module_entrypoint():
-    import runpy
+def test_unary_calculation():
+    calculation = Calculation([3], Operations.square)
 
+    assert calculation.get_result() == 9
+
+
+def test_many_value_calculation():
+    calculation = Calculation([2, 4, 6], Operations.sum)
+
+    assert calculation.get_result() == 12
+
+
+def test_calculation_forwards_options():
+    calculation = Calculation([3], Operations.power, exponent=4)
+
+    assert calculation.get_result() == 81
+
+
+def test_module_entrypoint():
     runpy.run_module("calculator", run_name="__main__")

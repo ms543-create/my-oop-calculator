@@ -1,4 +1,4 @@
-"""Tests for centralized calculation creation."""
+"""Tests for creating calculations with flexible inputs."""
 
 import pytest
 
@@ -6,40 +6,93 @@ from calculator.calculation import Calculation
 from calculator.factory import CalculationFactory
 
 
-def test_create_add():
-    calculation = CalculationFactory.create("add", 2, 3)
+@pytest.mark.parametrize(
+    "name,values,expected",
+    [
+        (" ADD ", ["2", "3"], 5),
+        ("subtract", [2, 3], -1),
+        ("multiply", [2, 3], 6),
+        ("divide", [7, 2], 3.5),
+        ("absolute_difference", [3, 8], 5),
+    ],
+)
+def test_factory_configures_calculation(name, values, expected):
+    calculation = CalculationFactory.create(name, *values)
 
     assert isinstance(calculation, Calculation)
+    assert calculation.get_result() == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "name,values",
+    [
+        ("unknown", [1, 2]),
+        ("add", [1]),
+        ("add", [1, 2, 3]),
+        ("add", ["x", "2"]),
+        ("add", [1, float("inf")]),
+    ],
+)
+def test_factory_rejects_invalid_request(name, values):
+    with pytest.raises(ValueError):
+        CalculationFactory.create(name, *values)
+
+
+def test_factory_does_not_execute():
+    calculation = CalculationFactory.create("divide", 1, 0)
+
+    with pytest.raises(ZeroDivisionError):
+        calculation.get_result()
+
+
+@pytest.mark.parametrize(
+    "name,values,options,expected",
+    [
+        ("square", [3], {}, 9),
+        ("sqrt", [9], {}, 3),
+        ("power", [3], {"exponent": "4"}, 81),
+        ("sum", [2, 4, 6], {}, 12),
+    ],
+)
+def test_argument_counts_and_named_options(name, values, options, expected):
+    calculation = CalculationFactory.create(name, *values, **options)
+
+    assert calculation.get_result() == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    "name,values,options",
+    [
+        ("square", [1, 2], {}),
+        ("sqrt", [], {}),
+        ("add", [1, 2], {"exponent": 2}),
+        ("power", [2], {"exponent": "x"}),
+    ],
+)
+def test_reject_invalid_argument_contract(name, values, options):
+    with pytest.raises(ValueError):
+        CalculationFactory.create(name, *values, **options)
+
+
+def test_sum_rejects_empty_input_during_execution():
+    calculation = CalculationFactory.create("sum")
+
+    with pytest.raises(ValueError):
+        calculation.get_result()
+
+def test_scale_with_factor():
+    calculation = CalculationFactory.create("scale", 10, factor=2)
+
     assert calculation.get_result() == 5
 
 
-def test_factory_normalizes_operation_name():
-    calculation = CalculationFactory.create(" ADD ", "2", "3")
-
-    assert calculation.get_result() == 5
-
-
-def test_create_multiply():
-    calculation = CalculationFactory.create("multiply", 4, 3)
-
-    assert calculation.get_result() == 12
+def test_scale_rejects_unsupported_option():
+    with pytest.raises(ValueError):
+        CalculationFactory.create("scale", 10, exponent=2)
 
 
-def test_create_absolute_difference():
-    calculation = CalculationFactory.create("absolute_difference", 3, 8)
-
-    assert calculation.get_result() == 5
-
-
-def test_unknown_operation():
-    with pytest.raises(ValueError, match="Unknown operation: power"):
-        CalculationFactory.create("power", 2, 3)
-
-
-def test_creation_does_not_execute_division():
-    calculation = CalculationFactory.create("divide", 10, 0)
-
-    assert isinstance(calculation, Calculation)
+def test_scale_zero_factor_fails_during_execution():
+    calculation = CalculationFactory.create("scale", 10, factor=0)
 
     with pytest.raises(ZeroDivisionError):
         calculation.get_result()

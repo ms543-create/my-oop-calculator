@@ -1,7 +1,7 @@
-"""Demonstrate creating a calculation through the factory."""
+"""Demonstrate flexible calculations created through the factory."""
 
 from calculator.factory import CalculationFactory
 
 
-calculation = CalculationFactory.create("add", 2, 3)
-print(calculation.get_result())
+print(CalculationFactory.create("add", 2, 3).get_result())
+print(CalculationFactory.create("power", 3, exponent=4).get_result())

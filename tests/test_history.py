@@ -15,7 +15,7 @@ def test_empty_history():
 
 def test_add_calculation_and_result():
     history = History()
-    calculation = Calculation(2, 3, Operations.add)
+    calculation = Calculation([2, 3], Operations.add)
 
     result = calculation.get_result()
     history.add(calculation, result)
@@ -25,7 +25,7 @@ def test_add_calculation_and_result():
 
 def test_history_copy_protects_membership():
     history = History()
-    calculation = Calculation(2, 3, Operations.add)
+    calculation = Calculation([2, 3], Operations.add)
 
     history.add(calculation, calculation.get_result())
 
@@ -38,8 +38,8 @@ def test_history_copy_protects_membership():
 def test_history_preserves_order():
     history = History()
 
-    addition = Calculation(2, 3, Operations.add)
-    subtraction = Calculation(10, 4, Operations.subtract)
+    addition = Calculation([2, 3], Operations.add)
+    subtraction = Calculation([10, 4], Operations.subtract)
 
     history.add(addition, addition.get_result())
     history.add(subtraction, subtraction.get_result())
@@ -52,7 +52,7 @@ def test_history_preserves_order():
 
 def test_clear_history():
     history = History()
-    calculation = Calculation(2, 3, Operations.add)
+    calculation = Calculation([2, 3], Operations.add)
 
     history.add(calculation, calculation.get_result())
     history.clear()
