@@ -57,3 +57,10 @@ Email and text-message notification classes could share a common `send()` method
 ### Transferring the Design to Another Language
 
 The main design ideas from this project can transfer to other programming languages. Ideas like classes, objects, inheritance, abstraction, polymorphism, encapsulation, and separating responsibilities are not limited to Python. I would still need to learn the other language's syntax and rules, such as how it defines classes, handles abstract methods, checks types, manages collections, and handles exceptions.
+
+
+## Part 1 Reflection
+
+I originally thought creating a `Calculation` would perform the operation immediately. After the refactor, I learned that construction only stores the operands and operation. The operation does not run until `get_result()` is called.
+
+With composition, adding an absolute difference operation only required adding a new function and tests. With the previous inheritance design, I would have needed another `Calculation` subclass with its own `get_result()` implementation.

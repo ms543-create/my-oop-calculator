@@ -1,7 +1,6 @@
-"""Launch with python -m calculator."""
+"""Demonstrate a calculation with a stored operation."""
 
-from calculator.cli import run
+from calculator.calculation import Calculation
+from calculator.operations import Operations
 
-# Python executes this module when the user types python -m calculator.
-# Keep arithmetic and the REPL in other modules so tests can import them.
-run()
+print(Calculation(2, 3, Operations.add).get_result())
