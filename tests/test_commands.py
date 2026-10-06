@@ -7,6 +7,7 @@ from calculator.commands import (
     ClearHistoryCommand,
     CountCommand,
     HistoryCommand,
+    SummaryCommand,
     HelpCommand,
 )
 from calculator.factory import CalculationFactory
@@ -98,3 +99,35 @@ def test_count_ignores_failed_calculation():
     command = CountCommand(session)
 
     assert command.execute() == "Count: 1"
+
+
+
+def test_summary_command_reports_successes_and_failures():
+    session = CalculatorSession()
+
+    successful = CalculationFactory.create("add", 2, 3)
+    failed = CalculationFactory.create("divide", 1, 0)
+
+    session.calculate(successful)
+
+    try:
+        session.calculate(failed)
+    except ZeroDivisionError as error:
+        session.record_failure(error)
+
+    command = SummaryCommand(session)
+
+    assert command.execute() == "Successes: 1, Failures: 1"
+
+
+def test_clear_resets_successes_and_failures():
+    session = CalculatorSession()
+
+    calculation = CalculationFactory.create("add", 2, 3)
+    session.calculate(calculation)
+    session.record_failure(ValueError("example failure"))
+
+    session.clear()
+
+    assert session.get_history() == []
+    assert session.get_failures() == []

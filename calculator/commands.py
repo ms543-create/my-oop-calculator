@@ -85,3 +85,15 @@ class CountCommand(Command):
     def execute(self):
         count = len(self.session.get_history())
         return f"Count: {count}"
+
+
+class SummaryCommand(Command):
+    """Report successful and failed calculation counts."""
+
+    def __init__(self, session):
+        self.session = session
+
+    def execute(self):
+        successes = len(self.session.get_history())
+        failures = len(self.session.get_failures())
+        return f"Successes: {successes}, Failures: {failures}"

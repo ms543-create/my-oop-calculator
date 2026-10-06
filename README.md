@@ -104,3 +104,26 @@ CSV input is kept separate from the mathematical operations. The CSV reader turn
 The flow for CSV data is DataFrame → Series → list → numeric tuple → stored operation → result. File reading belongs in `inputs.py`, mathematical rules belong in `statistics.py` and `operations.py`, construction belongs in the factory, and display belongs in the command and CLI layers.
 
 For the independent exercise, I updated the CSV reader so a caller can select another documented column such as `observation`. The statistics and calculation components remain independent of the file structure because they only receive observations after the CSV reader has extracted the selected column.
+
+
+## Part 6 Reflection
+
+A successful power request starts with the CLI receiving the request and passing the operation name, values, and options to the factory. The factory selects the static operation and constructs a `Calculation` that stores the callable and its inputs. A command tells the session to execute the calculation. The session calls `get_result()` and adds the calculation to history only after it succeeds.
+
+A failed division follows the same path through construction, but execution raises a `ZeroDivisionError`. Because the calculation never finishes successfully, the session does not add it to history. The application boundary catches the expected error so later work can continue.
+
+Earlier in the calculator project, operations such as `Add` were subclasses of `Calculation`. The newer design uses composition instead. A `Calculation` stores a static callable such as `Operations.add` rather than inheriting the mathematical behavior. This makes it easier to add operations without creating another calculation subclass.
+
+The factory and commands have different responsibilities. The factory creates a `Calculation` from an operation name, operands, and supported options. A command represents an application action, such as calculating, displaying history, clearing state, or reporting a summary.
+
+`History.get_history()` returns a shallow copy. This protects the internal history list because adding or removing items from the returned list cannot change the stored list. The limitation is that the objects inside the copied list are still the same objects, so it is not a deep copy.
+
+For sequence processing, iteration belongs in the sequence layer while successful recording stays in `CalculatorSession.calculate()`. Each item has its own `try` block so one failure does not stop later calculations. When raw requests are processed, factory construction is also inside the `try` block so preparation failures such as an unknown operation can be handled independently.
+
+The session now retains failures separately from successful history. The summary action reports the number of successes and failures. I chose for `clear()` to reset both because they are both part of the current session state, and tests establish that rule.
+
+Configured unary operations follow a contract before they are added to the factory. For example, `power` accepts exactly one operand, allows the `exponent` option, and defaults the exponent to 2. The factory handles operand counts and allowed option names while the operation performs the math.
+
+Input structure stays separate from mathematical behavior. `inputs.py` understands CSV columns, while `Operations` and the statistics functions only work with numeric observations. This allows the input schema to change without adding file knowledge to the math layer.
+
+The cumulative test suite provides evidence that the new behavior works and that earlier behavior still passes. The sequence tests specifically prove that a successful calculation after a failure still executes and that only successes enter history. Coverage also verifies that the implemented lines and branches are exercised. A limitation is that 100% coverage does not prove every possible requirement or input case is correct, and an older CI result would not prove the current revision works.
