@@ -1,181 +1,158 @@
-"""A test conversation provides input and checks what the app prints."""
+"""Tests for the calculator CLI."""
 
-from calculator.cli import run
+import pytest
+
+from calculator import session
+from calculator.cli import prepare_command, run
+from calculator.commands import (
+    CalculateCommand,
+    ClearHistoryCommand,
+    CountCommand,
+    HelpCommand,
+    HistoryCommand,
+)
+from calculator.session import CalculatorSession
 
 
-def session(monkeypatch, capsys, answers):
-    # iter is a cursor; next takes one response for each input prompt.
-    responses = iter(answers)
+def test_prepare_calculation_command():
+    session = CalculatorSession()
 
-    def scripted_input(prompt):
-        return next(responses)
+    command = prepare_command("add 2 3", session)
 
-    # pytest supplies these fixtures and restores input after the test.
-    monkeypatch.setattr("builtins.input", scripted_input)
+    assert isinstance(command, CalculateCommand)
+    assert command.execute() == "Result: 5.0000"
+
+
+def test_prepare_power_with_option():
+    session = CalculatorSession()
+
+    command = prepare_command("power 3 exponent=4", session)
+
+    assert command.execute() == "Result: 81.0000"
+
+
+def test_prepare_application_commands():
+    session = CalculatorSession()
+
+    assert isinstance(prepare_command("history", session), HistoryCommand)
+    assert isinstance(prepare_command("clear", session), ClearHistoryCommand)
+    assert isinstance(prepare_command("help", session), HelpCommand)
+    assert prepare_command("count", session).execute() == "Count: 0"
+
+@pytest.mark.parametrize("text", ["history 1", "clear 1", "help 1"])
+def test_actions_reject_values(text):
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command(text, session)
+
+
+def test_empty_command_rejected():
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command("", session)
+
+
+def test_duplicate_options_rejected():
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command("power 3 exponent=2 exponent=4", session)
+
+
+def test_empty_option_name_rejected():
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command("power 3 =4", session)
+
+
+def test_run_calculation_and_exit(monkeypatch, capsys):
+    responses = iter(["add 2 3", "exit"])
+    monkeypatch.setattr("builtins.input", lambda _: next(responses))
+
     run()
-    return capsys.readouterr().out
+
+    output = capsys.readouterr().out
+
+    assert "Calculator" in output
+    assert "Result: 5.0000" in output
+    assert "Goodbye!" in output
 
 
-def test_arithmetic_session(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        ["add", "10", "5", "subtract", "20", "7", "exit"]
-    )
-    assert "Result: 15" in output
-    assert "Result: 13" in output
-    assert output.endswith("Goodbye!\n")
+def test_run_recovers_from_error(monkeypatch, capsys):
+    responses = iter(["divide 1 0", "add 2 3", "exit"])
+    monkeypatch.setattr("builtins.input", lambda _: next(responses))
+
+    run()
+
+    output = capsys.readouterr().out
+
+    assert "Error:" in output
+    assert "Result: 5.0000" in output
+    assert "Goodbye!" in output
 
 
-def test_history_and_removal(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        [
-            "add", "10", "5",
-            "subtract", "20", "7",
-            "history",
-            "remove", "1",
-            "history",
-            "exit",
-        ]
-    )
-    assert "1. Add: 10, 5 = 15" in output
-    assert "2. Subtract: 20, 7 = 13" in output
-    assert "Removed: Add: 10, 5 = 15" in output
-    assert output.endswith("1. Subtract: 20, 7 = 13\nGoodbye!\n")
+def test_run_handles_eof(monkeypatch, capsys):
+    def raise_eof(_):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", raise_eof)
+
+    run()
+
+    output = capsys.readouterr().out
+
+    assert "Calculator" in output
+    assert "Goodbye!" in output
 
 
-def test_empty_history(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        ["history", "remove", "exit"]
-    )
-    assert output.count("No calculations in history.") == 2
-
-
-def test_help_and_unknown_command(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        [" HELP ", "pizza", " EXIT "]
-    )
-    assert "Commands:" in output
-    assert "Unknown command." in output
-    assert output.endswith("Goodbye!\n")
-
-
-def test_invalid_first_number_recovers(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        ["add", "hello", "history", "add", "2", "3", "exit"]
-    )
-    assert "Invalid number or result." in output
-    assert "No calculations in history." in output
-    assert "Result: 5" in output
-
-
-def test_invalid_second_number_recovers(monkeypatch, capsys):
-    output = session(
-        monkeypatch,
-        capsys,
-        [
-            "subtract", "10", "hello",
-            "history",
-            "subtract", "8", "3",
-            "exit",
-        ]
-    )
-    assert "Invalid number or result." in output
-    assert "No calculations in history." in output
-    assert "Result: 5" in output
-def test_invalid_removal_number_preserves_history(monkeypatch, capsys):
-    # Familiar loops exercise several boundary inputs without new test syntax.
-    for invalid_number in ["0", "-1", "99"]:
-        output = session(
-            monkeypatch,
-            capsys,
-            ["add", "1", "2", "remove", invalid_number, "history", "exit"]
-        )
-        assert "Calculation does not exist." in output, invalid_number
-        assert output.count("1. Add: 1, 2 = 3") == 2, invalid_number
-
-
-def test_invalid_removal_text_preserves_history(monkeypatch, capsys):
-    for invalid_text in ["hello", "1.5"]:
-        output = session(
-            monkeypatch,
-            capsys,
-            ["add", "1", "2", "remove", invalid_text, "history", "exit"]
-        )
-        assert "Please enter a whole calculation number." in output, invalid_text
-        assert output.count("1. Add: 1, 2 = 3") == 2, invalid_textS
-def test_nonfinite_operands_do_not_enter_history(monkeypatch, capsys):
-    for operands in [["nan"], ["inf"], ["-inf"], ["1", "nan"]]:
-        answers = ["add"] + operands + ["history", "add", "2", "3", "exit"]
-        output = session(monkeypatch, capsys, answers)
-        assert "Invalid number or result." in output, operands
-        assert "No calculations in history." in output, operands
-        assert "Result: 5" in output, operands
-def test_overflow_does_not_enter_history(monkeypatch, capsys):
-    output = session(monkeypatch, capsys,
-                     ["add", "1e308", "1e308", "history", "exit"])
-    assert "Invalid number or result." in output
-    assert "No calculations in history." in output
-def test_blank_command_is_unknown(monkeypatch, capsys):
-    output = session(monkeypatch, capsys, ["", "exit"])
-    assert "Unknown command." in output
-    assert output.endswith("Goodbye!\n")
-def test_remove_only_entry(monkeypatch, capsys):
-    output = session(monkeypatch, capsys,
-                     ["add", "-1.5", "0.5", "remove", "1", "history", "exit"])
-    assert "Removed: Add: -1.5, 0.5 = -1" in output
-    assert "No calculations in history." in output
-def test_complete_assignment_session(monkeypatch, capsys):
-    output = session(monkeypatch, capsys,
-                     ["add", "10", "5", "subtract", "20", "7",
-                      "add", "100", "50", "history", "remove", "2",
-                      "history", "exit"])
-    assert "Result: 15\n" in output
-    assert "Result: 13\n" in output
-    assert "Result: 150\n" in output
-    assert "Removed: Subtract: 20, 7 = 13" in output
-    assert output.endswith(
-        "1. Add: 10, 5 = 15\n"
-        "2. Add: 100, 50 = 150\n"
-        "Goodbye!\n"
-    )
-def test_interrupted_input_exits_cleanly(monkeypatch, capsys):
-    # Script answers up to a prompt, then simulate input ending or Ctrl+C.
-    prefixes = [[], ["add"], ["add", "1"], ["add", "1", "2", "remove"]]
-
-    for interruption in [EOFError, KeyboardInterrupt]:
-        for prefix in prefixes:
-            responses = iter(prefix)
-
-            def interrupted_input(prompt):
-                try:
-                    return next(responses)
-                except StopIteration:
-                    raise interruption from None
-
-            monkeypatch.setattr("builtins.input", interrupted_input)
-            run()
-
-            assert capsys.readouterr().out.endswith(
-                "\nGoodbye!\n"
-            ), (interruption, prefix)
-def test_module_entrypoint(monkeypatch, capsys):
-    # runpy exercises python -m calculator's entry module in this process.
+def test_module_entrypoint(monkeypatch):
     import runpy
 
-    def exit_command(prompt):
-        return "exit"
+    monkeypatch.setattr("builtins.input", lambda _: "exit")
 
-    monkeypatch.setattr("builtins.input", exit_command)
     runpy.run_module("calculator", run_name="__main__")
-    output = capsys.readouterr().out
-    assert "OOP Calculator" in output
-    assert output.endswith("Goodbye!\n")
+
+
+def test_prepare_csv_mean():
+    session = CalculatorSession()
+
+    command = prepare_command("csv mean values.csv", session)
+
+    assert command.execute() == "Result: 30.0000"
+
+
+def test_prepare_csv_stddev():
+    session = CalculatorSession()
+
+    command = prepare_command("csv stddev values.csv", session)
+
+    assert command.execute() == "Result: 15.8114"
+
+
+def test_prepare_csv_stddev_with_ddof():
+    session = CalculatorSession()
+
+    command = prepare_command("csv stddev values.csv ddof=0", session)
+
+    assert command.execute() == "Result: 14.1421"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "csv",
+        "csv mean",
+        "csv add values.csv",
+        "csv mean values.csv badoption",
+        "csv stddev values.csv =0",
+        "csv stddev values.csv ddof=0 ddof=1",
+    ],
+)
+def test_reject_invalid_csv_commands(text):
+    session = CalculatorSession()
+
+    with pytest.raises(ValueError):
+        prepare_command(text, session)

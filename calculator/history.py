@@ -1,34 +1,24 @@
-"""Manage a collection of calculation objects."""
+"""Preserve the previous project's controlled history boundary."""
 
 from calculator.calculation import Calculation
 
 
 class History:
-    """Own session history and expose controlled access to its collection."""
+    """Store successful calculations and their results."""
 
     def __init__(self) -> None:
-        # An instance attribute gives each History its own list.
-        # A leading underscore means internal use by convention, not security.
-        # History HAS MANY calculations; it does not inherit from Calculation.
-        self._calculations: list[Calculation] = []
+        self._entries = []
 
-    def add(self, calculation: Calculation) -> None:
-        """Append a calculation to history."""
-        # isinstance accepts subclasses too, including Add and Subtract.
+    def add(self, calculation: Calculation, result: float) -> None:
         if not isinstance(calculation, Calculation):
             raise TypeError("History accepts Calculation objects only.")
-        self._calculations.append(calculation)
 
-    def get_history(self) -> list[Calculation]:
-        """Return a copy so callers cannot modify the internal list."""
-        # This is a shallow copy: the list is new, its calculation objects are not.
-        # Clearing this returned list cannot erase History's internal entries.
-        return self._calculations.copy()
+        self._entries.append((calculation, result))
 
-    def remove(self, index: int) -> Calculation:
-        """Remove and return a calculation by its zero-based index."""
-        # Python allows negative indexes, but our public method rejects them.
-        # Validate before changing state so invalid requests preserve history.
-        if index < 0 or index >= len(self._calculations):
-            raise IndexError("Calculation does not exist.")
-        return self._calculations.pop(index)
+    def get_history(self):
+        """Return a shallow copy of the history entries."""
+        return self._entries.copy()
+
+    def clear(self) -> None:
+        """Remove all entries from history."""
+        self._entries.clear()
