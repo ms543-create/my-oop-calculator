@@ -1,7 +1,5 @@
 """Tests for calculations with flexible inputs."""
 
-import runpy
-
 import pytest
 
 from calculator.calculation import Calculation
@@ -54,7 +52,3 @@ def test_calculation_forwards_options():
     calculation = Calculation([3], Operations.power, exponent=4)
 
     assert calculation.get_result() == 81
-
-
-def test_module_entrypoint():
-    runpy.run_module("calculator", run_name="__main__")

@@ -1,7 +1,6 @@
-"""Demonstrate flexible calculations created through the factory."""
+"""Run the calculator command-line interface."""
 
-from calculator.factory import CalculationFactory
+from calculator.cli import run
 
 
-print(CalculationFactory.create("add", 2, 3).get_result())
-print(CalculationFactory.create("power", 3, exponent=4).get_result())
+run()

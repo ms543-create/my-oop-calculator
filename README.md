@@ -82,3 +82,14 @@ The factory still validates requests because flexible arguments do not mean ever
 In a function definition, `*values` gathers positional arguments and `**options` gathers named arguments. At a call site, `*values` unpacks positional values and `**options` unpacks named settings.
 
 For the independent exercise, I added `scale`, which takes one value and an optional `factor`. Its construction rules are registered in the factory, while a zero factor fails later when the calculation executes.
+
+
+## Part 4 Reflection
+
+The Command pattern gives different application actions the same `execute()` contract. `CalculateCommand`, `HistoryCommand`, `ClearHistoryCommand`, `HelpCommand`, and `CountCommand` perform different tasks, but the CLI can invoke them through the same method.
+
+`CalculatorSession` acts as the receiver. It executes a calculation first and only adds it to history if the calculation succeeds. This is why a failed calculation, such as division by zero, does not increase the history or count.
+
+The `count` feature belongs as an application action instead of a mathematical operation because it does not perform math on operands. It looks at the current calculator session and reports how many successful calculations have been saved.
+
+A static operation performs the actual math, a `Calculation` object stores an operation with its inputs, and a `Command` represents an application action that can be executed.
