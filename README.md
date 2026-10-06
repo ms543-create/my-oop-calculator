@@ -64,3 +64,10 @@ The main design ideas from this project can transfer to other programming langua
 I originally thought creating a `Calculation` would perform the operation immediately. After the refactor, I learned that construction only stores the operands and operation. The operation does not run until `get_result()` is called.
 
 With composition, adding an absolute difference operation only required adding a new function and tests. With the previous inheritance design, I would have needed another `Calculation` subclass with its own `get_result()` implementation.
+
+
+## Part 2 Reflection
+
+The creation step now takes an operation name, normalizes it, selects the correct operation, and returns a configured `Calculation`. The math does not run during this process. It only runs later when `get_result()` is called.
+
+The construction policy now lives in `CalculationFactory`. For example, `absolute_difference` is registered there instead of requiring each caller to know which function should be used.

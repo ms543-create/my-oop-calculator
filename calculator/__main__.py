@@ -1,6 +1,7 @@
-"""Demonstrate a calculation with a stored operation."""
+"""Demonstrate creating a calculation through the factory."""
 
-from calculator.calculation import Calculation
-from calculator.operations import Operations
+from calculator.factory import CalculationFactory
 
-print(Calculation(2, 3, Operations.add).get_result())
+
+calculation = CalculationFactory.create("add", 2, 3)
+print(calculation.get_result())
